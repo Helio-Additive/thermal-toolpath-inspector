@@ -1,0 +1,38 @@
+name: Python App Build
+
+on:
+  push:
+    branches: [main]
+
+env:
+  PYTHONPATH: ${{ GITHUB_WORKSPACE }}/src:${PYTHONPATH}
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x" # specify the version you're using (e.g., 3.8, 3.9)
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build the application
+        run: |
+          pyinstaller --onefile --windowed myapp.py
+          # For Mac:
+          # python setup.py py2app
+
+      - name: Upload the artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-output
+          path: dist/
