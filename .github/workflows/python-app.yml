@@ -1,38 +1,42 @@
-name: Python App Build
+name: Build and Test
 
 on:
   push:
-    branches: [main]
-
-env:
-  PYTHONPATH: ${{ GITHUB_WORKSPACE }}/src:${PYTHONPATH}
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build-and-test:
-    name: Build and Test
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.9]
+        architecture: [x64, arm64] # macOS supports ARM64, Windows supports x64
+      exclude:
+        - os: windows-latest
+          architecture: arm64 # Windows ARM64 is not supported in GitHub Actions
+
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.x" # specify the version you're using (e.g., 3.8, 3.9)
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Build the application
+      - name: Run the app (test build)
         run: |
-          pyinstaller --onefile --windowed myapp.py
-          # For Mac:
-          # python setup.py py2app
-
-      - name: Upload the artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-output
-          path: dist/
+          python app/inspector.py &
+          sleep 10
+          pkill -f inspector.py
